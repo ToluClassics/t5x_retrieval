@@ -24,7 +24,7 @@ MULTILIGUAL_EXTRA_IDS = 100
 
 
 def get_multilingual_vocabulary():
-  return seqio.SentencePieceVocabulary(MULTILIGUAL_SPM_PATH, MULTILIGUAL_EXTRA_IDS)
+  return seqio.SentencePieceVocabulary(MULTILIGUAL_SPM_PATH)
 
 
 DEFAULT_VOCAB = t5.data.get_default_vocabulary()
