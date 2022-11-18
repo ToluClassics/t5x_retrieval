@@ -39,9 +39,9 @@ DEFAULT_OUTPUT_FEATURES = {
 MULTILINGUAL_VOCAB = get_multilingual_vocabulary()
 MULTILINGUAL_OUTPUT_FEATURES = {
     "inputs":
-        seqio.Feature(vocabulary=DEFAULT_VOCAB, add_eos=True, required=False),
+        seqio.Feature(vocabulary=MULTILINGUAL_VOCAB, add_eos=True, required=False),
     "targets":
-        seqio.Feature(vocabulary=DEFAULT_VOCAB, add_eos=True)
+        seqio.Feature(vocabulary=MULTILINGUAL_VOCAB, add_eos=True)
 }
 
 
@@ -69,6 +69,7 @@ seqio.TaskRegistry.add(
     ],
     metric_fns=[],
     output_features=DEFAULT_OUTPUT_FEATURES)
+# ----- Beir MS Marco-----
 
 # ----- Multilingual MS Marco-----
 seqio.TaskRegistry.add(
@@ -79,6 +80,24 @@ seqio.TaskRegistry.add(
             "train": "train",
             "validation": "validation",
         },
+    ),
+    preprocessors=[
+        functools.partial(
+            t5.data.preprocessors.rekey,
+            key_map={
+                "inputs": "query",
+                "targets": "passage",
+            }),
+        seqio.preprocessors.tokenize,
+        seqio.CacheDatasetPlaceholder(),
+        seqio.preprocessors.append_eos_after_trim,
+    ],
+    metric_fns=[],
+    output_features=MULTILINGUAL_OUTPUT_FEATURES)
+
+seqio.TaskRegistry.add(
+    "mmarco_retrieval",
+    source=seqio.TfdsDataSource(
         tfds_name="mrtydi/mmarco-en:1.0.0",
         splits={
             "train": "train",
@@ -97,7 +116,7 @@ seqio.TaskRegistry.add(
         seqio.preprocessors.append_eos_after_trim,
     ],
     metric_fns=[],
-    output_features=DEFAULT_OUTPUT_FEATURES)
+    output_features=MULTILINGUAL_OUTPUT_FEATURES)
 
 
 # ============================ Inference Tasks/Mixtures =======================
