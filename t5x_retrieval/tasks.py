@@ -73,7 +73,7 @@ seqio.TaskRegistry.add(
 
 # ----- Multilingual MS Marco-----
 seqio.TaskRegistry.add(
-    "mmarco_retrieval",
+    "mmarco_retrieval_de",
     source=seqio.TfdsDataSource(
         tfds_name="mrtydi/mmarco-de:1.0.0",
         splits={
@@ -96,7 +96,7 @@ seqio.TaskRegistry.add(
     output_features=MULTILINGUAL_OUTPUT_FEATURES)
 
 seqio.TaskRegistry.add(
-    "mmarco_retrieval",
+    "mmarco_retrieval_en",
     source=seqio.TfdsDataSource(
         tfds_name="mrtydi/mmarco-en:1.0.0",
         splits={
@@ -117,6 +117,12 @@ seqio.TaskRegistry.add(
     ],
     metric_fns=[],
     output_features=MULTILINGUAL_OUTPUT_FEATURES)
+
+
+seqio.MixtureRegistry.add(
+  "multilingual_marco_mixture",
+  [("mmarco_retrieval_de", 1), ("mmarco_retrieval_en", 1)]
+)
 
 
 # ============================ Inference Tasks/Mixtures =======================
