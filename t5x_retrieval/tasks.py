@@ -19,8 +19,25 @@ import seqio
 import t5.data
 
 
+MULTILIGUAL_SPM_PATH = "gs://t5-data/vocabs/mc4.250000.100extra/sentencepiece.model"  # GCS
+MULTILIGUAL_EXTRA_IDS = 100
+
+
+def get_multilingual_vocabulary():
+  return seqio.SentencePieceVocabulary(MULTILIGUAL_SPM_PATH, MULTILIGUAL_EXTRA_IDS)
+
+
 DEFAULT_VOCAB = t5.data.get_default_vocabulary()
 DEFAULT_OUTPUT_FEATURES = {
+    "inputs":
+        seqio.Feature(vocabulary=DEFAULT_VOCAB, add_eos=True, required=False),
+    "targets":
+        seqio.Feature(vocabulary=DEFAULT_VOCAB, add_eos=True)
+}
+
+
+MULTILINGUAL_VOCAB = get_multilingual_vocabulary()
+MULTILINGUAL_OUTPUT_FEATURES = {
     "inputs":
         seqio.Feature(vocabulary=DEFAULT_VOCAB, add_eos=True, required=False),
     "targets":
@@ -34,6 +51,35 @@ seqio.TaskRegistry.add(
     "beir_msmarco_retrieval",
     source=seqio.TfdsDataSource(
         tfds_name="beir/msmarco:1.0.0",
+        splits={
+            "train": "train",
+            "validation": "validation",
+        },
+    ),
+    preprocessors=[
+        functools.partial(
+            t5.data.preprocessors.rekey,
+            key_map={
+                "inputs": "query",
+                "targets": "passage",
+            }),
+        seqio.preprocessors.tokenize,
+        seqio.CacheDatasetPlaceholder(),
+        seqio.preprocessors.append_eos_after_trim,
+    ],
+    metric_fns=[],
+    output_features=DEFAULT_OUTPUT_FEATURES)
+
+# ----- Multilingual MS Marco-----
+seqio.TaskRegistry.add(
+    "mmarco_retrieval",
+    source=seqio.TfdsDataSource(
+        tfds_name="mrtydi/mmarco-de:1.0.0",
+        splits={
+            "train": "train",
+            "validation": "validation",
+        },
+        tfds_name="mrtydi/mmarco-en:1.0.0",
         splits={
             "train": "train",
             "validation": "validation",
