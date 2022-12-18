@@ -18,6 +18,77 @@ import functools
 import seqio
 import t5.data
 
+tsv_english_path = {
+        "train": "/home/mac/datasets/train_english.tsv",
+        "validation": "/home/mac/datasets/dev_english.tsv",
+}
+
+tsv_german_path = {
+        "train": "/home/mac/datasets/train_german.tsv",
+        "validation": "/home/mac/datasets/dev_german.tsv",
+}
+
+tsv_arabic_path = {
+        "train": "/home/mac/datasets/train_arabic.tsv",
+        "validation": "/home/mac/datasets/dev_arabic.tsv",
+}
+
+tsv_chinese_path = {
+        "train": "/home/mac/datasets/train_chinese.tsv",
+        "validation": "/home/mac/datasets/dev_chinese.tsv",
+}
+
+tsv_dutch_path = {
+        "train": "/home/mac/datasets/train_dutch.tsv",
+        "validation": "/home/mac/datasets/dev_dutch.tsv",
+}
+
+tsv_french_path = {
+        "train": "/home/mac/datasets/train_french.tsv",
+        "validation": "/home/mac/datasets/dev_french.tsv",
+}
+
+tsv_hindi_path = {
+        "train": "/home/mac/datasets/train_hindi.tsv",
+        "validation": "/home/mac/datasets/dev_hindi.tsv",
+}
+
+tsv_indonesian_path = {
+        "train": "/home/mac/datasets/train_indonesian.tsv",
+        "validation": "/home/mac/datasets/dev_indonesian.tsv",
+}
+
+tsv_japanese_path = {
+        "train": "/home/mac/datasets/train_japanese.tsv",
+        "validation": "/home/mac/datasets/dev_japanese.tsv",
+}
+
+tsv_portuguese_path = {
+        "train": "/home/mac/datasets/train_portuguese.tsv",
+        "validation": "/home/mac/datasets/dev_portuguese.tsv",
+}
+
+tsv_russian_path = {
+        "train": "/home/mac/datasets/train_russian.tsv",
+        "validation": "/home/mac/datasets/dev_russian.tsv",
+}
+
+language_to_path = {
+    "arabic": tsv_arabic_path,
+    "english": tsv_english_path,
+    "russian": tsv_russian_path,
+    "portuguese": tsv_portuguese_path,
+    "japanese": tsv_japanese_path,
+    "hindi": tsv_hindi_path,
+    "indonesian": tsv_indonesian_path,
+    "dutch": tsv_dutch_path,
+    "german": tsv_german_path,
+    "chinese": tsv_chinese_path,
+    "french": tsv_french_path,
+
+}
+
+
 
 MULTILIGUAL_SPM_PATH = "gs://t5-data/vocabs/mc4.250000.100extra/sentencepiece.model"  # GCS
 MULTILIGUAL_EXTRA_IDS = 100
@@ -72,56 +143,31 @@ seqio.TaskRegistry.add(
 # ----- Beir MS Marco-----
 
 # ----- Multilingual MS Marco-----
-seqio.TaskRegistry.add(
-    "mmarco_retrieval_de",
-    source=seqio.TfdsDataSource(
-        tfds_name="mrtydi/mmarco-de:1.0.0",
-        splits={
-            "train": "train",
-            "validation": "validation",
-        },
-    ),
-    preprocessors=[
-        functools.partial(
-            t5.data.preprocessors.rekey,
-            key_map={
-                "inputs": "query",
-                "targets": "passage",
-            }),
-        seqio.preprocessors.tokenize,
-        seqio.CacheDatasetPlaceholder(),
-        seqio.preprocessors.append_eos_after_trim,
-    ],
-    metric_fns=[],
-    output_features=MULTILINGUAL_OUTPUT_FEATURES)
 
-seqio.TaskRegistry.add(
-    "mmarco_retrieval_en",
-    source=seqio.TfdsDataSource(
-        tfds_name="mrtydi/mmarco-en:1.0.0",
-        splits={
-            "train": "train",
-            "validation": "validation",
-        },
-    ),
-    preprocessors=[
+for language in list(language_to_path.keys()):
+    seqio.TaskRegistry.add(
+        "mmarco_retrieval_{language}",
+        source=seqio.TextLineDataSource(
+            split_to_filepattern=language_to_path[language],
+            #num_input_examples=num_nq_examples
+            ),
+        preprocessors=[
         functools.partial(
-            t5.data.preprocessors.rekey,
-            key_map={
-                "inputs": "query",
-                "targets": "passage",
-            }),
+            t5.data.preprocessors.parse_tsv,
+            field_names=["inputs","targets"]),
         seqio.preprocessors.tokenize,
         seqio.CacheDatasetPlaceholder(),
         seqio.preprocessors.append_eos_after_trim,
-    ],
-    metric_fns=[],
-    output_features=MULTILINGUAL_OUTPUT_FEATURES)
+        ],
+        metric_fns=[],
+        output_features=MULTILINGUAL_OUTPUT_FEATURES,
+    )
+
 
 
 seqio.MixtureRegistry.add(
   "multilingual_marco_mixture",
-  [("mmarco_retrieval_de", 1), ("mmarco_retrieval_en", 1)]
+  [(f"mmarco_retrieval_{language}", 1) for language in list(language_to_path.keys())]
 )
 
 
