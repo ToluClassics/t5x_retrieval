@@ -193,3 +193,26 @@ for split in ["query", "passage"]:
       ],
       metric_fns=[],
       output_features=DEFAULT_OUTPUT_FEATURES)
+
+
+# ----- Beir MS Marco-----
+for split in ["query", "passage"]:
+  seqio.TaskRegistry.add(
+      f"mmarco_retrieval_de_{split}",
+      source=seqio.TfdsDataSource(
+          tfds_name="mrtydi/mmarco-en:1.0.0",
+          splits={split: split},
+      ),
+      preprocessors=[
+          functools.partial(
+              t5.data.preprocessors.rekey,
+              key_map={
+                  "inputs": split,
+                  "targets": f"{split}_id",
+              }),
+          seqio.preprocessors.tokenize,
+          seqio.CacheDatasetPlaceholder(),
+          seqio.preprocessors.append_eos_after_trim,
+      ],
+      metric_fns=[],
+      output_features=DEFAULT_OUTPUT_FEATURES)
