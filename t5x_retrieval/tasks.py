@@ -146,7 +146,7 @@ seqio.TaskRegistry.add(
 
 for language in list(language_to_path.keys()):
     seqio.TaskRegistry.add(
-        "mmarco_retrieval_{language}",
+        f"mmarco_retrieval_{language}",
         source=seqio.TextLineDataSource(
             split_to_filepattern=language_to_path[language],
             #num_input_examples=num_nq_examples
