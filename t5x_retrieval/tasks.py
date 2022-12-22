@@ -89,6 +89,83 @@ language_to_path = {
 }
 
 
+# ================================== Negatives ==================================
+
+tsv_english_negatives_path = {
+        "train": "/home/mac/datasets/train_english_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_english.tsv",
+}
+
+tsv_german_negatives_path = {
+        "train": "/home/mac/datasets/train_german_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_german.tsv",
+}
+
+tsv_arabic_negatives_path = {
+        "train": "/home/mac/datasets/train_arabic_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_arabic.tsv",
+}
+
+tsv_chinese_negatives_path = {
+        "train": "/home/mac/datasets/train_chinese_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_chinese.tsv",
+}
+
+tsv_dutch_negatives_path = {
+        "train": "/home/mac/datasets/train_dutch_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_dutch.tsv",
+}
+
+tsv_french_negatives_path = {
+        "train": "/home/mac/datasets/train_french_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_french.tsv",
+}
+
+tsv_hindi_negatives_path = {
+        "train": "/home/mac/datasets/train_hindi_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_hindi.tsv",
+}
+
+tsv_indonesian_negatives_path = {
+        "train": "/home/mac/datasets/train_indonesian_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_indonesian.tsv",
+}
+
+tsv_japanese_negatives_path = {
+        "train": "/home/mac/datasets/train_japanese_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_japanese.tsv",
+}
+
+tsv_portuguese_negatives_path = {
+        "train": "/home/mac/datasets/train_portuguese_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_portuguese.tsv",
+}
+
+tsv_russian_negatives_path = {
+        "train": "/home/mac/datasets/train_russian_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_russian.tsv",
+}
+
+tsv_spanish_negatives_path = {
+        "train": "/home/mac/datasets/train_spanish_negatives.tsv",
+        "validation": "/home/mac/datasets/dev_spanish.tsv",
+}
+
+language_negatives_to_path = {
+    "arabic": tsv_arabic_negatives_path,
+    "english": tsv_english_negatives_path,
+    "russian": tsv_russian_negatives_path,
+    "portuguese": tsv_portuguese_negatives_path,
+    "japanese": tsv_japanese_negatives_path,
+    "hindi": tsv_hindi_negatives_path,
+    "indonesian": tsv_indonesian_negatives_path,
+    "dutch": tsv_dutch_negatives_path,
+    "german": tsv_german_negatives_path,
+    "chinese": tsv_chinese_negatives_path,
+    "french": tsv_french_negatives_path,
+    "spanish": tsv_spanish_negatives_path,
+}
+
 
 MULTILIGUAL_SPM_PATH = "gs://t5-data/vocabs/mc4.250000.100extra/sentencepiece.model"  # GCS
 MULTILIGUAL_EXTRA_IDS = 100
@@ -115,6 +192,16 @@ MULTILINGUAL_OUTPUT_FEATURES = {
         seqio.Feature(vocabulary=MULTILINGUAL_VOCAB, add_eos=True)
 }
 
+
+
+MULTILINGUAL_OUTPUT_FEATURES_NEGATIVES = {
+    "inputs":
+        seqio.Feature(vocabulary=MULTILINGUAL_VOCAB, add_eos=True, required=False),
+    "targets":
+        seqio.Feature(vocabulary=MULTILINGUAL_VOCAB, add_eos=True),
+    "negative_targets":
+        seqio.Feature(vocabulary=MULTILINGUAL_VOCAB, add_eos=True),
+}
 
 # =========================== Fine-tuning Tasks/Mixtures =======================
 # ----- Beir MS Marco-----
@@ -149,16 +236,15 @@ for language in list(language_to_path.keys()):
         f"mmarco_retrieval_{language}",
         source=seqio.TextLineDataSource(
             split_to_filepattern=language_to_path[language],
-            #num_input_examples=num_nq_examples
             ),
         preprocessors=[
         functools.partial(
             t5.data.preprocessors.parse_tsv,
             field_names=["inputs","targets"]),
-        seqio.preprocessors.tokenize,
-        seqio.CacheDatasetPlaceholder(),
-        seqio.preprocessors.append_eos_after_trim,
-        ],
+                seqio.preprocessors.tokenize,
+                seqio.CacheDatasetPlaceholder(),
+                seqio.preprocessors.append_eos_after_trim,
+                ],
         metric_fns=[],
         output_features=MULTILINGUAL_OUTPUT_FEATURES,
     )
@@ -168,6 +254,30 @@ for language in list(language_to_path.keys()):
 seqio.MixtureRegistry.add(
   "multilingual_marco_mixture",
   [(f"mmarco_retrieval_{language}", 1) for language in list(language_to_path.keys())]
+)
+
+# ----- Multilingual MS Marco with Negatives -----
+for language in list(language_to_path.keys()):
+    seqio.TaskRegistry.add(
+        f"mmarco_retrieval_{language}_negatives",
+        source=seqio.TextLineDataSource(
+            split_to_filepattern=language_negatives_to_path[language],
+            ),
+        preprocessors=[
+        functools.partial(
+            t5.data.preprocessors.parse_tsv,
+            field_names=["inputs","targets", "negative_targets"]),
+        seqio.preprocessors.tokenize,
+        seqio.CacheDatasetPlaceholder(),
+        seqio.preprocessors.append_eos_after_trim,
+        ],
+        metric_fns=[],
+        output_features=MULTILINGUAL_OUTPUT_FEATURES_NEGATIVES,
+    ) 
+
+seqio.MixtureRegistry.add(
+  "multilingual_marco_mixture_negatives",
+  [(f"mmarco_retrieval_{language}_negatives", 1) for language in list(language_to_path.keys())]
 )
 
 

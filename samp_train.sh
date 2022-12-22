@@ -1,0 +1,23 @@
+export GOOGLE_CLOUD_BUCKET_NAME=pongo-bucket/odunayo
+export TFDS_DATA_DIR=gs://$GOOGLE_CLOUD_BUCKET_NAME/mt5x_retrieval/data
+export MODEL_DIR=\"gs://$GOOGLE_CLOUD_BUCKET_NAME/mt5x_retrieval/$(date +%Y%m%d)\"
+
+python3 ../t5x/t5x/main.py --run_mode=train \
+    --gin.MODEL_DIR=${MODEL_DIR} \
+    --tfds_data_dir=${TFDS_DATA_DIR} \
+    --gin_file=t5x_retrieval/configs/models/de_mt5_base.gin \
+    --gin.INITIAL_CHECKPOINT_PATH=\"gs://t5-data/pretrained_models/t5x/mt5_base/checkpoint_1000000\" \
+    --gin_file=t5x_retrieval/configs/runs/finetune.gin \
+    --gin.TRAIN_STEPS=1100000 \
+    --gin.utils.create_learning_rate_scheduler.step_offset=999900 \
+    --gin.utils.create_learning_rate_scheduler.warmup_steps=1000 \
+    --gin.utils.create_learning_rate_scheduler.decay_factor=0.00000125 \
+    --gin.USE_CACHED_TASKS=False \
+    --gin.models.DualEncoderModel.use_negatives=False \
+    --gin.train.eval_period=500 \
+    --gin.utils.SaveCheckpointConfig.keep=10 \
+    --gin.utils.SaveCheckpointConfig.period=20000 \
+    --gin.train/DatasetConfig.batch_size=512 \
+    --gin.MIXTURE_OR_TASK_NAME="'multilingual_marco_mixture'" \
+    --gin.MIXTURE_OR_TASK_MODULE="'t5x_retrieval.tasks'" \
+    --gin.TASK_FEATURE_LENGTHS="{'inputs': 64, 'targets': 512}"
