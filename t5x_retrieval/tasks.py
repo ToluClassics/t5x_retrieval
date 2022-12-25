@@ -167,6 +167,15 @@ language_negatives_to_path = {
 }
 
 
+# ================================== CLirMatrix Pretraining ==================================
+
+tsv_clirmatrix_multi_path = {
+        "train": "/home/mac/datasets/train_clirmatrix.tsv",
+        "validation": "/home/mac/datasets/dev_clirmatrix.tsv",
+}
+
+
+
 MULTILIGUAL_SPM_PATH = "gs://t5-data/vocabs/mc4.250000.100extra/sentencepiece.model"  # GCS
 MULTILIGUAL_EXTRA_IDS = 100
 
@@ -256,7 +265,7 @@ seqio.MixtureRegistry.add(
   [(f"mmarco_retrieval_{language}", 1) for language in list(language_to_path.keys())]
 )
 
-# ----- Multilingual MS Marco with Negatives -----
+# =============================== Multilingual MS Marco with Negatives ===============================
 for language in list(language_to_path.keys()):
     seqio.TaskRegistry.add(
         f"mmarco_retrieval_{language}_negatives",
@@ -280,6 +289,24 @@ seqio.MixtureRegistry.add(
   [(f"mmarco_retrieval_{language}_negatives", 1) for language in list(language_to_path.keys())]
 )
 
+# =============================== CLIRMatrix ===============================
+
+seqio.TaskRegistry.add(
+        f"clirmatrix_pretraining",
+        source=seqio.TextLineDataSource(
+            split_to_filepattern=language_to_path[language],
+            ),
+        preprocessors=[
+        functools.partial(
+            t5.data.preprocessors.parse_tsv,
+            field_names=["inputs","targets"]),
+                seqio.preprocessors.tokenize,
+                seqio.CacheDatasetPlaceholder(),
+                seqio.preprocessors.append_eos_after_trim,
+                ],
+        metric_fns=[],
+        output_features=MULTILINGUAL_OUTPUT_FEATURES,
+    )
 
 # ============================ Inference Tasks/Mixtures =======================
 # ----- Beir MS Marco-----
