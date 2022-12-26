@@ -294,7 +294,7 @@ seqio.MixtureRegistry.add(
 seqio.TaskRegistry.add(
         f"clirmatrix_pretraining",
         source=seqio.TextLineDataSource(
-            split_to_filepattern=language_to_path[language],
+            split_to_filepattern=tsv_clirmatrix_multi_path,
             ),
         preprocessors=[
         functools.partial(
